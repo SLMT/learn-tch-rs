@@ -8,6 +8,22 @@ Just follow the guideline in the README of [tch-rs](https://github.com/LaurentMa
 
 Note: the official PyTorch package has already had built-in CUDA runtime, so we don't need to install CUDA toolkit.
 
+## OpenAI Gym
+
+In order to test reinforcement learning methods, we need to use [OpenAI Gym](https://github.com/openai/gym) to setup environments, so we require OpenAI Gym to be installed on the host machine.
+
+First, the host machine must have Python runtime, and install OpenAI Gym via the following command:
+
+```
+> pip install gym
+```
+
+To test if we can run OpenAI Gym properly, run the following command:
+
+```
+> cargo run --bin gym_test
+```
+
 ## Setup Data Sets
 
 ### MNIST
