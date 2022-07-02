@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 tch = "0.7.2"
+gym = "2.2.1"
