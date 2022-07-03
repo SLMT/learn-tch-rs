@@ -43,3 +43,4 @@ Each of the following binaries can be run with `cargo run --binary [NAME]`.
 - `mnist_dense`: an example code for training a dense net with MNIST data set
 - `mnist_cnn`: an example code for training a CNN with MNIST data set
 - `gym_test`: a test for checking if it can run [OpenAI Gym](https://github.com/openai/gym) properly.
+- `cartpole_policy_gradient`: an example code for training a policy gradient RL agent on [Cart Pole](https://www.gymlibrary.ml/environments/classic_control/cart_pole/) environment.
