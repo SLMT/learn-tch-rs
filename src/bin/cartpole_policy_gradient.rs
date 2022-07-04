@@ -5,8 +5,8 @@ use tch::{Device, Tensor};
 use tch::Kind::Float;
 
 const TOTAL_EPISODE: usize = 10000;
-const UPDATE_EPISODE: usize = 50;
-const EVAL_EPISODE: usize = 100;
+const UPDATE_EPISODE: usize = 100;
+const EVAL_EPISODE: usize = 500;
 
 struct Agent {
     vs: VarStore,
@@ -32,13 +32,11 @@ impl Agent {
         agent
     }
 
-    fn forward(&self, xs: &Tensor) -> Tensor {
-        self.model.as_ref().unwrap().forward(xs).softmax(0, Float)
-    }
-
     fn act(&self, observation: &Tensor) -> usize {
         // Model inference the action distribution
-        let probs = self.forward(observation);
+        let probs = tch::no_grad(||
+            self.model.as_ref().unwrap().forward(observation).softmax(0, Float)
+        );
         
         // Sample an action
         let action: i64 = probs.multinomial(1, true).into();
@@ -64,7 +62,7 @@ impl Agent {
             .map(|s| s.reward).collect();
         let rewards = Tensor::of_slice(&rewards)
             .to_device(self.device()).to_kind(Float);
-        // Note that this code comsumes 'trajectory' since we use 'into_iter()'
+        // Note that this code comsumes 'steps' since we use 'into_iter()'
         // so it must be put at the last line.
         let observations: Vec<Tensor> = steps.into_iter()
             .map(|s| s.observation).collect();
