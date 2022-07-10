@@ -1,12 +1,12 @@
 
-use gym::{GymClient, SpaceTemplate, Environment};
+use gym::{GymClient, SpaceTemplate, Environment, SpaceData};
 use tch::nn::{self, VarStore, Optimizer, Module, Sequential, Adam, OptimizerConfig};
 use tch::{Device, Tensor};
 use tch::Kind::Float;
 
-const TOTAL_EPISODE: usize = 10000;
-const UPDATE_EPISODE: usize = 100;
-const EVAL_EPISODE: usize = 500;
+const TOTAL_EPISODE: usize = 1000;
+const UPDATE_EPISODE: usize = 10;
+const EVAL_EPISODE: usize = 50;
 
 struct Agent {
     vs: VarStore,
@@ -75,7 +75,7 @@ impl Agent {
         let loss = -(rewards * log_probs).mean(Float);
 
         // Backward pass
-        self.opt.as_mut().unwrap().backward_step(&loss);
+        self.opt.as_mut().unwrap().backward_step_clip(&loss, 0.5);
 
     }
 }
@@ -110,8 +110,10 @@ fn get_action_count(env: &Environment) -> i64 {
     }
 }
 
-fn observation_into_tensor(observation: &[f64], device: Device) -> Tensor {
-    let obs: Vec<f32> = observation.iter().map(|val| *val as f32).collect();
+fn observation_into_tensor(observation: SpaceData, device: Device) -> Tensor {
+    let obs = observation.get_box().expect("unable to get state");
+    let obs = obs.as_slice().unwrap();
+    let obs: Vec<f32> = obs.iter().map(|val| *val as f32).collect();
     Tensor::of_slice(&obs).to_device(device)
 }
 
@@ -142,14 +144,15 @@ fn main() {
     let mut steps = Vec::new();
     for episode in 1..=TOTAL_EPISODE {
         // Reset the environment
-        let obs = env.reset().expect("unable to reset");
-        let obs = obs.get_box().expect("unable to get state");
+        let mut obs = observation_into_tensor(
+            env.reset().expect("unable to reset"),
+            agent.device()
+        );
 
         // Step iteration
         let mut trajectory = Vec::new();
         loop {
             // React to the observation
-            let obs = observation_into_tensor(obs.as_slice().unwrap(), agent.device());
             let action_id = agent.act(&obs);
             let action = gym::SpaceData::DISCRETE(action_id);
             let state = env.step(&action).expect("unable to take an action");
@@ -160,6 +163,12 @@ fn main() {
                 action: action_id,
                 reward: state.reward
             });
+
+            // Update the observation
+            obs = observation_into_tensor(
+                state.observation.clone(),
+                agent.device()
+            );
 
             // Render
             if episode % EVAL_EPISODE == 0 {
